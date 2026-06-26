@@ -1,0 +1,149 @@
+services:
+  # Service d'amorçage : exécute le pipeline complet une première fois
+  # (ingestion dlt -> transformation dbt -> entraînement ML) afin que
+  # l'API ait un modèle disponible dès `docker compose up --build`,
+  # sans étape manuelle dans Dagster UI.
+  pipeline-init:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dagster
+    container_name: movielens-pipeline-init
+    volumes:
+      - ./data:/opt/dagster/data
+      - ./ml:/opt/dagster/ml
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      mlflow:
+        condition: service_started
+    working_dir: /opt/dagster
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -e
+        echo ">>> [1/3] Ingestion dlt (MovieLens 100K -> DuckDB)"
+        python dlt_pipeline/pipeline.py
+        echo ">>> [2/3] Transformation dbt (staging + marts + tests)"
+        cd dbt_project && dbt deps && dbt build --target dev
+        cd /opt/dagster
+        echo ">>> [3/3] Entraînement du modèle KNN"
+        python ml/src/train.py --n-neighbors 10
+        echo ">>> Pipeline d'amorçage terminé avec succès."
+    networks:
+      - movielens_net
+    restart: "no"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow/Dockerfile
+    container_name: movielens-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow/data
+      - mlflow_artifacts:/mlflow/artifacts
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+  dagster:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dagster
+    container_name: movielens-dagster
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/opt/dagster/data
+      - dagster_home:/opt/dagster/dagster_home
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: movielens-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./ml:/app/ml
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_NAME=movielens-recommender
+    depends_on:
+      mlflow:
+        condition: service_started
+      pipeline-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    container_name: movielens-streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: movielens-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: movielens-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - movielens_net
+
+networks:
+  movielens_net:
+    driver: bridge
+
+volumes:
+  mlflow_data:
+  mlflow_artifacts:
+  dagster_home:
+  prometheus_data:
+  grafana_data:

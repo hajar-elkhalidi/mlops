@@ -1,0 +1,76 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python dlt_pipeline/pipeline.py
+    deps:
+    - path: dlt_pipeline/movielens_source.py
+      hash: md5
+      md5: 3192f52936aca815e82c33caeb3f3a82
+      size: 6915
+    - path: dlt_pipeline/pipeline.py
+      hash: md5
+      md5: 30f3309c409b2f3abd1b787c74b5943d
+      size: 1099
+    params:
+      params.yaml:
+        ingestion.dataset: ml-100k
+    outs:
+    - path: data/duckdb/movielens.duckdb
+      hash: md5
+      md5: f4264d2e30b75699da51b725b9b97a24
+      size: 3682304
+  transform:
+    cmd: cd dbt_project && dbt build --target dev && touch 
+      ../data/duckdb/.transform_done
+    deps:
+    - path: data/duckdb/movielens.duckdb
+      hash: md5
+      md5: fc87b7c7623bab77baa4977c0d5df291
+      size: 4730880
+    - path: dbt_project/models
+      hash: md5
+      md5: 6f271371e80045bdc1b9816a4bc071ed.dir
+      size: 7578
+      nfiles: 10
+    params:
+      params.yaml:
+        dbt.target: dev
+    outs:
+    - path: data/duckdb/.transform_done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  train:
+    cmd: python ml/src/train.py --n-neighbors 10 --test-size 0.2 --random-state 
+      42
+    deps:
+    - path: data/duckdb/.transform_done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: ml/src/build_matrix.py
+      hash: md5
+      md5: 17e4b04bb645c939c8de16d57a2537a9
+      size: 1702
+    - path: ml/src/evaluate.py
+      hash: md5
+      md5: 6dbd772f71da7b5a0aaf2d18531d4436
+      size: 1306
+    - path: ml/src/train.py
+      hash: md5
+      md5: 7363450f348bdf811b5ee2987d14317d
+      size: 8813
+    params:
+      params.yaml:
+        train.n_neighbors: 10
+        train.random_state: 42
+        train.test_size: 0.2
+    outs:
+    - path: ml/metrics.json
+      hash: md5
+      md5: 5b1adce054c7f7fffe11856c0ce289c1
+      size: 103
+    - path: ml/models/knn_model.joblib
+      hash: md5
+      md5: 182db3f80cad369a166023096c34d4df
+      size: 83398

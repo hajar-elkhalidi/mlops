@@ -1,0 +1,78 @@
+{
+  "title": "MovieLens API - Monitoring",
+  "uid": "movielens-api-monitoring",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requêtes /predict (par seconde)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(predict_requests_total{job=\"movielens-api\"}[1m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latence /predict (p95, secondes)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(predict_latency_seconds_bucket{job=\"movielens-api\"}[5m])) by (le))",
+          "legendFormat": "p95 latency"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Nombre total de prédictions servies",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(predict_requests_total{job=\"movielens-api\", status=\"200\"})",
+          "legendFormat": "prédictions réussies"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Service Up / Modèle chargé",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "up{job=\"movielens-api\"}",
+          "legendFormat": "API up"
+        },
+        {
+          "expr": "model_loaded{job=\"movielens-api\"}",
+          "legendFormat": "modèle chargé"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Qualité du modèle (dernier entraînement)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "model_rmse{job=\"movielens-api\"}",
+          "legendFormat": "RMSE"
+        },
+        {
+          "expr": "model_precision_at_10{job=\"movielens-api\"}",
+          "legendFormat": "Precision@10"
+        }
+      ]
+    }
+  ]
+}

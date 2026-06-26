@@ -1,0 +1,14 @@
+# Paramètres du pipeline DataOps/MLOps, centralisés pour DVC.
+# Modifier ces valeurs change le comportement du pipeline sans toucher au code
+# (cf. `dvc.yaml` qui les injecte dans les commandes d'ingestion/entraînement).
+
+ingestion:
+  dataset: ml-100k          # dataset MovieLens utilisé (100K uniquement, cf. consignes projet)
+
+dbt:
+  target: dev               # cible dbt (dev ou ci)
+
+train:
+  n_neighbors: 10           # nombre de voisins KNN (item-based, similarité cosinus)
+  test_size: 0.2             # proportion du jeu de test
+  random_state: 42           # graine aléatoire pour la reproductibilité

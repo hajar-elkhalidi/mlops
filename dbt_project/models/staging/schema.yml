@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_ratings
+    description: "Notes nettoyées et typées, une ligne par (utilisateur, film, date)"
+    columns:
+      - name: user_id
+        description: "Identifiant utilisateur"
+        tests: [not_null]
+      - name: movie_id
+        description: "Identifiant film"
+        tests: [not_null]
+      - name: rating
+        description: "Note attribuée, échelle entière de 1 à 5 (ml-100k)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: rated_at
+        description: "Horodatage de la notation"
+
+  - name: stg_movies
+    description: "Catalogue des films avec année extraite du titre"
+    columns:
+      - name: movie_id
+        description: "Identifiant film (clé primaire)"
+        tests: [not_null, unique]
+      - name: title
+        description: "Titre du film (sans l'année)"
+        tests: [not_null]
+      - name: release_year
+        description: "Année de sortie extraite du titre"
+      - name: genres
+        description: "Genres séparés par '|'"
+
+  - name: stg_users
+    description: "Métadonnées démographiques des utilisateurs (ml-100k : u.user)"
+    columns:
+      - name: user_id
+        description: "Identifiant utilisateur (clé primaire)"
+        tests: [not_null, unique]
+      - name: age
+        description: "Âge de l'utilisateur"
+        tests: [not_null]
+      - name: sex
+        description: "Sexe (M/F)"
+        tests:
+          - accepted_values:
+              values: ["M", "F"]
+      - name: occupation
+        description: "Profession déclarée"

@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "Données brutes ingérées par dlt depuis MovieLens 100K (ml-100k)"
+    tables:
+      - name: ratings
+        description: "Notes attribuées par les utilisateurs aux films"
+        columns:
+          - name: user_id
+            tests: [not_null]
+          - name: movie_id
+            tests: [not_null]
+          - name: rating
+            tests: [not_null]
+      - name: movies
+        description: "Catalogue des films"
+        columns:
+          - name: movie_id
+            tests: [not_null, unique]
+      - name: users
+        description: "Métadonnées démographiques des utilisateurs (âge, sexe, profession)"
+        columns:
+          - name: user_id
+            tests: [not_null, unique]

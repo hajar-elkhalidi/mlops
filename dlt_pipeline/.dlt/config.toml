@@ -1,0 +1,8 @@
+[runtime]
+log_level = "INFO"
+
+[normalize]
+data_writer.disable_compression = true
+
+# La destination DuckDB est configurée en code (pipeline.py)
+# car le chemin du fichier .duckdb est calculé dynamiquement.

@@ -1,0 +1,42 @@
+stages:
+  ingest:
+    cmd: python dlt_pipeline/pipeline.py
+    deps:
+      - dlt_pipeline/pipeline.py
+      - dlt_pipeline/movielens_source.py
+    params:
+      - ingestion.dataset
+    outs:
+      - data/duckdb/movielens.duckdb:
+          cache: false  # base DuckDB régénérée à chaque run, pas de gros blob versionné
+
+  transform:
+    # dbt enrichit le même fichier DuckDB (ajout des schémas staging/marts).
+    # On déclare un fichier sentinelle en sortie car DVC attend un "out" propre
+    # par stage, distinct de l'"out" déjà déclaré par le stage ingest.
+    cmd: cd dbt_project && dbt build --target ${dbt.target} && touch ../data/duckdb/.transform_done
+    deps:
+      - data/duckdb/movielens.duckdb
+      - dbt_project/models
+    params:
+      - dbt.target
+    outs:
+      - data/duckdb/.transform_done:
+          cache: false
+
+  train:
+    cmd: python ml/src/train.py --n-neighbors ${train.n_neighbors} --test-size ${train.test_size} --random-state ${train.random_state}
+    deps:
+      - data/duckdb/.transform_done
+      - ml/src/train.py
+      - ml/src/build_matrix.py
+      - ml/src/evaluate.py
+    params:
+      - train.n_neighbors
+      - train.test_size
+      - train.random_state
+    outs:
+      - ml/models/knn_model.joblib
+    metrics:
+      - ml/metrics.json:
+          cache: false

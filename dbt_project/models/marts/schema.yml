@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: dim_movies
+    description: "Dimension film — catalogue enrichi avec genres (ml-100k)"
+    columns:
+      - name: movie_id
+        description: "Clé primaire"
+        tests: [not_null, unique]
+      - name: title
+        tests: [not_null]
+      - name: genres_list
+        description: "Liste des genres (array)"
+
+  - name: dim_users
+    description: "Dimension utilisateur — métadonnées démographiques + agrégats comportementaux"
+    columns:
+      - name: user_id
+        description: "Clé primaire"
+        tests: [not_null, unique]
+      - name: age
+        tests: [not_null]
+      - name: nb_ratings
+        tests: [not_null]
+
+  - name: fact_ratings
+    description: "Table de faits — une ligne par notation (grain : user, movie, rating)"
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
+      - name: movie_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_movies')
+              field: movie_id
+      - name: rating
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+  - name: agg_genre_popularity
+    description: "Agrégat analytique : popularité et note moyenne par genre"
+    columns:
+      - name: genre
+        tests: [not_null, unique]
+      - name: nb_ratings
+        tests: [not_null]

@@ -1,0 +1,7 @@
+[tool.dagster]
+module_name = "movielens_dagster"
+
+[project]
+name = "movielens_dagster"
+version = "1.0.0"
+requires-python = ">=3.10"

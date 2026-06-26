@@ -1,0 +1,27 @@
+# Image Docker légère pour l'API Flask (KNN recommender)
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+COPY api/requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+COPY api/app ./app
+COPY ml/src ./ml/src
+COPY ml/models ./ml/models
+
+ENV PYTHONUNBUFFERED=1
+ENV MLFLOW_TRACKING_URI=http://mlflow:5000
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "app.main:app"]

@@ -1,0 +1,39 @@
+# Image Docker pour Dagster (webserver + daemon) — orchestration complète
+# du pipeline DataOps/MLOps (dlt -> dbt -> ML), 100% locale via Docker Compose.
+FROM python:3.11-slim
+
+WORKDIR /opt/dagster
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY dagster_project/requirements.txt ./dagster_requirements.txt
+COPY dlt_pipeline/requirements.txt ./dlt_requirements.txt
+COPY dbt_project/requirements.txt ./dbt_requirements.txt
+COPY ml/requirements.txt ./ml_requirements.txt
+
+RUN pip install --no-cache-dir \
+    -r dagster_requirements.txt \
+    -r dlt_requirements.txt \
+    -r dbt_requirements.txt \
+    -r ml_requirements.txt
+
+COPY dagster_project ./dagster_project
+COPY dlt_pipeline ./dlt_pipeline
+COPY dbt_project ./dbt_project
+COPY ml ./ml
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+RUN mkdir -p $DAGSTER_HOME
+COPY docker/dagster.yaml $DAGSTER_HOME/dagster.yaml
+
+# PYTHONPATH étendu pour que les assets Dagster retrouvent dlt_pipeline/ml/src
+# quel que soit le répertoire de travail au démarrage du conteneur.
+ENV PYTHONPATH=/opt/dagster:/opt/dagster/dlt_pipeline:/opt/dagster/ml/src
+
+WORKDIR /opt/dagster/dagster_project
+
+EXPOSE 3000
+
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]

@@ -1,0 +1,13 @@
+movielens_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../data/duckdb/movielens.duckdb"
+      schema: dev
+      threads: 4
+    ci:
+      type: duckdb
+      path: "../data/duckdb/movielens.duckdb"
+      schema: ci
+      threads: 2
