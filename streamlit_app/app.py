@@ -17,7 +17,7 @@ import requests
 import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
-DUCKDB_PATH = Path(__file__).parent.parent / "data" / "duckdb" / "movielens.duckdb"
+DUCKDB_PATH = Path(os.getenv("DUCKDB_PATH", "/app/data/duckdb/movielens.duckdb"))
 
 st.set_page_config(page_title="MovieLens Recommender", page_icon="🎬", layout="centered")
 
