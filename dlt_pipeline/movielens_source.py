@@ -51,6 +51,14 @@ def _generate_synthetic_dataset(target_dir: Path, n_users: int = 200, n_movies: 
     # u.item : movie_id | title | release_date | video_release_date | imdb_url | 19 genres binaires
     item_rows = []
     for movie_id in range(1, n_movies + 1):
+        if movie_id == 1:
+            # Reproduit le film "unknown" du vrai dataset ml-100k (movie_id 267),
+            # sans année entre parenthèses dans le titre -> sert de garde-fou
+            # pour la gestion de release_year NULL dans stg_movies.sql.
+            fields = [str(movie_id), "unknown", "", "", ""] + ["0"] * len(GENRE_COLUMNS)
+            fields[5] = "1"  # genre "unknown" activé
+            item_rows.append("|".join(fields))
+            continue
         year = rng.randint(1990, 1998)
         genres = [rng.choice([0, 1]) for _ in GENRE_COLUMNS]
         if sum(genres) == 0:

@@ -5,8 +5,11 @@ WORKDIR /mlflow
 
 RUN pip install --no-cache-dir mlflow==2.16.0
 
-# Backend store SQLite local (simple pour un projet universitaire)
-# + dossier d'artefacts persistant via volume Docker
+# Création explicite des dossiers avant déclaration du volume : évite que
+# SQLite échoue ("unable to open database file") au tout premier démarrage,
+# quand le volume Docker nommé est encore vide.
+RUN mkdir -p /mlflow/data /mlflow/artifacts
+
 VOLUME ["/mlflow/data", "/mlflow/artifacts"]
 
 EXPOSE 5000
