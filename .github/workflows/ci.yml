@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Installer les dépendances API
+        run: |
+          pip install --upgrade pip
+          pip install -r api/requirements.txt
+          pip install -r dlt_pipeline/requirements.txt
+          pip install -r dbt_project/requirements.txt
+          pip install -r ml/requirements.txt
+          pip install -r streamlit_app/requirements.txt
+          pip install ruff pytest
+
+      - name: Lint (ruff)
+        run: ruff check api/app ml/src dlt_pipeline streamlit_app --exit-zero
+
+      - name: Ingestion dlt (dataset de test)
+        run: python dlt_pipeline/pipeline.py
+
+      - name: Validation du schéma DuckDB
+        run: python scripts/validate_schema.py
+
+      - name: dbt build (run + test)
+        working-directory: dbt_project
+        run: |
+          dbt deps
+          dbt build --target ci
+
+      - name: Entraînement du modèle KNN (sans MLflow serveur)
+        run: python ml/src/train.py --n-neighbors 10
+
+      - name: Tests unitaires (API + ML)
+        run: pytest api/tests/ tests/unit/ -v
+
+  build-check:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Build de l'image Docker API (vérification uniquement)
+        run: docker build -f docker/Dockerfile.api -t movielens-api:ci .
+
+      - name: Build de l'image Docker Streamlit (vérification uniquement)
+        run: docker build -f docker/Dockerfile.streamlit -t movielens-streamlit:ci .
+
+      - name: Build de l'image Docker Dagster (vérification uniquement)
+        run: docker build -f docker/Dockerfile.dagster -t movielens-dagster:ci .
+
+      - name: Vérifier que docker compose démarre correctement
+        run: |
+          docker compose config  # valide la syntaxe complète du fichier
+          docker compose up -d mlflow
+          sleep 5
+          docker compose ps
+          docker compose logs mlflow
+          docker compose down -v

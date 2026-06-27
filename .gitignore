@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Données et bases locales
+data/raw/*
+!data/raw/.gitkeep
+data/duckdb/*.duckdb
+data/duckdb/*.duckdb.wal
+data/duckdb/.transform_done
+!data/duckdb/.gitkeep
+
+# DVC (cache local, pas versionné — seuls dvc.yaml/dvc.lock/params.yaml le sont)
+.dvc/cache/
+.dvc/tmp/
+.dvc/.gitignore
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+dbt_project/.user.yml
+
+# Dagster
+dagster_project/dagster_home/
+dagster_project/**/storage/
+.dagster_home/
+
+# ML artifacts
+ml/models/*.joblib
+!ml/models/.gitkeep
+mlruns/
+mlartifacts/
+
+# MLflow local
+mlflow/data/
+mlflow/artifacts/
+
+# Docker
+*.log
+
+# Variables d'environnement
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
