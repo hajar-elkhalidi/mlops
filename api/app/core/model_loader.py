@@ -16,7 +16,10 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+# Voir le commentaire équivalent dans app/main.py : PROJECT_ROOT est résolu
+# via une variable d'environnement, pas un nombre fixe de .parent, car la
+# profondeur de ce fichier diffère entre exécution locale et conteneur Docker.
+PROJECT_ROOT = Path(os.getenv("PROJECT_ROOT", Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(PROJECT_ROOT / "ml" / "src"))
 
 from recommend import recommender  # noqa: E402

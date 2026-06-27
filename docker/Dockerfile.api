@@ -14,9 +14,13 @@ ENV PATH=/root/.local/bin:$PATH
 
 COPY api/app ./app
 COPY ml/src ./ml/src
-COPY ml/models ./ml/models
+# Note : ml/models n'est pas copié dans l'image — le modèle entraîné est fourni
+# au runtime via le volume Docker Compose (./ml:/app/ml), pas au moment du build.
+# Cela évite toute dépendance à l'existence préalable de ml/models/*.joblib
+# au moment du `docker build` (avant le premier entraînement).
 
 ENV PYTHONUNBUFFERED=1
+ENV PROJECT_ROOT=/app
 ENV MLFLOW_TRACKING_URI=http://mlflow:5000
 
 EXPOSE 8000

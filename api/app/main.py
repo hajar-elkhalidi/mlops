@@ -10,6 +10,7 @@ Le modèle KNN est chargé une seule fois au démarrage du serveur (cf. core/mod
 avec fallback automatique sur le modèle local si MLflow est indisponible.
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -17,7 +18,13 @@ from pathlib import Path
 from flask import Flask, jsonify, request, Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+# ML_SRC_PATH pointe vers le dossier ml/src. Calculé via une variable
+# d'environnement plutôt qu'un nombre fixe de .parent, car la profondeur de
+# ce fichier diffère entre l'exécution locale (api/app/main.py, sous la
+# racine du repo) et l'exécution dans le conteneur Docker (/app/app/main.py,
+# où ml/ est monté directement sous /app). Un nombre de .parent codé en dur
+# donne un résultat différent selon le contexte -> bug silencieux sinon.
+PROJECT_ROOT = Path(os.getenv("PROJECT_ROOT", Path(__file__).parent.parent.parent))
 sys.path.append(str(PROJECT_ROOT / "ml" / "src"))
 
 from recommend import recommender  # noqa: E402
