@@ -13,6 +13,7 @@ services:
       - ./ml:/opt/dagster/ml
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - DBT_DUCKDB_PATH=/opt/dagster/data/duckdb/movielens.duckdb
     depends_on:
       mlflow:
         condition: service_started
@@ -59,6 +60,7 @@ services:
       - dagster_home:/opt/dagster/dagster_home
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - DBT_DUCKDB_PATH=/opt/dagster/data/duckdb/movielens.duckdb
     depends_on:
       - mlflow
     restart: unless-stopped

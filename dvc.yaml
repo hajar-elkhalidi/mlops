@@ -14,7 +14,10 @@ stages:
     # dbt enrichit le même fichier DuckDB (ajout des schémas staging/marts).
     # On déclare un fichier sentinelle en sortie car DVC attend un "out" propre
     # par stage, distinct de l'"out" déjà déclaré par le stage ingest.
-    cmd: cd dbt_project && dbt build --target ${dbt.target} && touch ../data/duckdb/.transform_done
+    # DBT_DUCKDB_PATH doit être un chemin absolu (cf. commentaire dans
+    # dbt_project/profiles.yml) : DVC exécute `cmd` depuis la racine du repo,
+    # donc ${PWD} y correspond bien ici.
+    cmd: DBT_DUCKDB_PATH=${PWD}/data/duckdb/movielens.duckdb bash -c "cd dbt_project && dbt build --target ${dbt.target}" && touch data/duckdb/.transform_done
     deps:
       - data/duckdb/movielens.duckdb
       - dbt_project/models

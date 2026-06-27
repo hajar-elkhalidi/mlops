@@ -32,6 +32,12 @@ COPY docker/dagster.yaml $DAGSTER_HOME/dagster.yaml
 # quel que soit le répertoire de travail au démarrage du conteneur.
 ENV PYTHONPATH=/opt/dagster:/opt/dagster/dlt_pipeline:/opt/dagster/ml/src
 
+# Chemin absolu de la base DuckDB, lu par dbt_project/profiles.yml. Doit être
+# cohérent avec le chemin calculé par dlt_pipeline/pipeline.py (qui, lui, se
+# base sur __file__ donc reste correct quel que soit le CWD). Surchargeable
+# via docker-compose.yml si besoin.
+ENV DBT_DUCKDB_PATH=/opt/dagster/data/duckdb/movielens.duckdb
+
 WORKDIR /opt/dagster/dagster_project
 
 EXPOSE 3000

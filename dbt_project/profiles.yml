@@ -3,11 +3,21 @@ movielens_dbt:
   outputs:
     dev:
       type: duckdb
-      path: "../data/duckdb/movielens.duckdb"
+      # DBT_DUCKDB_PATH doit être un chemin ABSOLU. Un chemin relatif ici
+      # (ex: "../data/duckdb/movielens.duckdb") est résolu par rapport au
+      # répertoire de travail (CWD) du PROCESSUS qui invoque `dbt`, pas par
+      # rapport à --project-dir ni à l'emplacement de ce fichier. Cela cause
+      # un bug silencieux : selon que dbt soit lancé via `cd dbt_project && dbt
+      # build` ou via `dbt build --project-dir ... --profiles-dir ...` depuis
+      # un autre répertoire (ex: l'asset Dagster), le fichier résultant peut
+      # être différent, ce qui désynchronise les données vues par chaque
+      # service (Dagster vs API vs Streamlit). D'où l'usage d'un chemin
+      # absolu explicite, identique dans tous les contextes d'exécution.
+      path: "{{ env_var('DBT_DUCKDB_PATH') }}"
       schema: dev
       threads: 4
     ci:
       type: duckdb
-      path: "../data/duckdb/movielens.duckdb"
+      path: "{{ env_var('DBT_DUCKDB_PATH') }}"
       schema: ci
       threads: 2

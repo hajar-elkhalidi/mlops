@@ -3,20 +3,20 @@
 
 install:
 	pip install -r requirements.txt
-	cd dbt_project && dbt deps
+	cd dbt_project && DBT_DUCKDB_PATH=$(CURDIR)/data/duckdb/movielens.duckdb dbt deps
 
 ingest:
 	python dlt_pipeline/pipeline.py
 	python scripts/validate_schema.py
 
 dbt-build:
-	cd dbt_project && dbt build
+	cd dbt_project && DBT_DUCKDB_PATH=$(CURDIR)/data/duckdb/movielens.duckdb dbt build
 
 dbt-test:
-	cd dbt_project && dbt test
+	cd dbt_project && DBT_DUCKDB_PATH=$(CURDIR)/data/duckdb/movielens.duckdb dbt test
 
 dbt-docs:
-	cd dbt_project && dbt docs generate && dbt docs serve
+	cd dbt_project && DBT_DUCKDB_PATH=$(CURDIR)/data/duckdb/movielens.duckdb dbt docs generate && dbt docs serve
 
 train:
 	python ml/src/train.py --n-neighbors 10
