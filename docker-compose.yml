@@ -80,6 +80,7 @@ services:
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_MODEL_NAME=movielens-recommender
+      - DBT_DUCKDB_PATH=/app/data/duckdb/movielens.duckdb
     depends_on:
       mlflow:
         condition: service_started
